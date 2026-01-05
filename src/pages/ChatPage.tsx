@@ -1,9 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import AppFrame from '../components/AppFrame'
 import Header from '../components/Header'
 import ChatMessages, { type Message } from '../components/ChatMessages'
 import ChatInput from '../components/ChatInput'
+import { askQuestion } from '../lib/api'
+import { normalizeMarkdown } from '../lib/format'
 
 type ChatLocationState = {
   fileName?: string
@@ -15,12 +17,7 @@ function ChatPage() {
   const { fileName } = (location.state as ChatLocationState) || {}
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
-
-  const placeholderReply = useMemo(
-    () =>
-      'Thanks for your question. I will analyze the document and respond with grounded answers when the backend is connected.',
-    [],
-  )
+  const [isSending, setIsSending] = useState(false)
 
   const handleSend = () => {
     const trimmed = input.trim()
@@ -32,14 +29,30 @@ function ChatPage() {
       content: trimmed,
     }
 
-    const botMessage: Message = {
-      id: crypto.randomUUID(),
-      role: 'bot',
-      content: placeholderReply,
-    }
-
-    setMessages((prev) => [...prev, userMessage, botMessage])
+    setMessages((prev) => [...prev, userMessage])
     setInput('')
+    setIsSending(true)
+
+    askQuestion(trimmed)
+      .then((response) => {
+        const content = normalizeMarkdown(response.data)
+        const botMessage: Message = {
+          id: crypto.randomUUID(),
+          role: 'bot',
+          content: content || 'No response received.',
+        }
+        setMessages((prev) => [...prev, botMessage])
+      })
+      .catch((error) => {
+        const message = error instanceof Error ? error.message : 'Unable to get a response.'
+        const botMessage: Message = {
+          id: crypto.randomUUID(),
+          role: 'bot',
+          content: message,
+        }
+        setMessages((prev) => [...prev, botMessage])
+      })
+      .finally(() => setIsSending(false))
   }
 
   const onBackToUpload = () => navigate('/', { replace: true })
@@ -59,7 +72,7 @@ function ChatPage() {
           </button>
         </div>
         <ChatMessages messages={messages} fileName={fileName} />
-        <ChatInput value={input} onChange={setInput} onSend={handleSend} />
+        <ChatInput value={input} onChange={setInput} onSend={handleSend} disabled={isSending} />
       </div>
     </AppFrame>
   )

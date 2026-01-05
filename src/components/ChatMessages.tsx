@@ -1,3 +1,6 @@
+import ReactMarkdown from 'react-markdown'
+import { normalizeMarkdown } from '../lib/format'
+
 type Message = {
   id: string
   role: 'user' | 'bot'
@@ -26,7 +29,13 @@ function ChatMessages({ messages, fileName }: ChatMessagesProps) {
           <div key={message.id} className={`message ${message.role}`}>
             <div className="bubble">
               <div className="message-meta">{message.role === 'user' ? 'You' : 'Assistant'}</div>
-              <p className="text-sm leading-relaxed">{message.content}</p>
+              {message.role === 'bot' ? (
+                <div className="markdown-body">
+                  <ReactMarkdown>{normalizeMarkdown(message.content)}</ReactMarkdown>
+                </div>
+              ) : (
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+              )}
             </div>
           </div>
         ))}
