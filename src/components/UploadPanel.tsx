@@ -1,24 +1,44 @@
-import { useRef, useState, type ChangeEvent, type DragEvent, type KeyboardEvent } from 'react'
+import {
+  useRef,
+  useState,
+  type ChangeEvent,
+  type DragEvent,
+  type KeyboardEvent,
+  type MouseEvent,
+} from 'react'
+import Toast from './Toast'
+import { uploadDocument } from '../lib/api'
 
 function UploadPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [status, setStatus] = useState('Select or drop PDFs to prepare them for QA.')
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [status, setStatus] = useState('Select or drop a PDF to prepare it for QA.')
+  const [toastMessage, setToastMessage] = useState('')
 
-  const handleFiles = (files: FileList | File[]) => {
-    const pdfs = Array.from(files).filter(
-      (file) => file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf'),
-    )
+  const handleFile = async (file: File) => {
+    if (isProcessing) return
 
-    if (!pdfs.length) {
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
       setStatus('Only PDF files are supported.')
       return
     }
 
-    const count = pdfs.length
-    const summary = pdfs.slice(0, 2).map((file) => file.name).join(', ')
-    const more = count > 2 ? ` +${count - 2} more` : ''
-    setStatus(`${count} PDF${count > 1 ? 's' : ''} ready: ${summary}${more}`)
+    setIsProcessing(true)
+    setStatus(`Processing ${file.name}...`)
+    setToastMessage('')
+
+    try {
+      const response = await uploadDocument(file)
+      setStatus('Upload complete.')
+      setToastMessage(response.message || 'Upload finished.')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Upload failed.'
+      setStatus(message)
+      setToastMessage(message)
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const onBrowseClick = () => {
@@ -27,25 +47,34 @@ function UploadPanel() {
 
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
+    event.stopPropagation()
     setIsDragging(false)
-    handleFiles(event.dataTransfer.files)
+    const [file] = Array.from(event.dataTransfer.files)
+    if (file) handleFile(file)
   }
 
   const onDragOver = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
+    event.stopPropagation()
     if (!isDragging) setIsDragging(true)
   }
 
   const onDragLeave = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault()
+    event.stopPropagation()
     setIsDragging(false)
   }
 
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      handleFiles(event.target.files)
+    if (event.target.files?.[0]) {
+      handleFile(event.target.files[0])
       event.target.value = ''
     }
+  }
+
+  const onZoneClick = (_event: MouseEvent<HTMLDivElement>) => {
+    if (isProcessing) return
+    onBrowseClick()
   }
 
   return (
@@ -57,7 +86,7 @@ function UploadPanel() {
         onDrop={onDrop}
         role="button"
         tabIndex={0}
-        onClick={onBrowseClick}
+        onClick={onZoneClick}
         onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault()
@@ -70,20 +99,30 @@ function UploadPanel() {
           ref={fileInputRef}
           type="file"
           accept="application/pdf"
-          multiple
           className="sr-only"
+          multiple={false}
           onChange={onChange}
+          aria-label="Upload PDF"
         />
-        <div className="upload-title">Upload PDFs</div>
-        <p className="upload-hint">Click to browse or drag and drop your files here.</p>
+        <div className="upload-title">Upload a PDF</div>
+        <p className="upload-hint">Click to browse or drag and drop your file here.</p>
         <div className="upload-actions">
-          <button type="button" className="button-primary">
-            Choose PDFs
+          <button
+            type="button"
+            className="button-primary"
+            onClick={(event) => {
+              event.stopPropagation()
+              onBrowseClick()
+            }}
+            disabled={isProcessing}
+          >
+            {isProcessing ? 'Processing…' : 'Choose PDF'}
           </button>
-          <span className="upload-note">PDF files only. Multiple files supported.</span>
+          <span className="upload-note">PDF files only. One file at a time.</span>
         </div>
-        <p className="upload-note">{status}</p>
+        <p className={`upload-status ${isProcessing ? 'processing' : ''}`}>{status}</p>
       </div>
+      {toastMessage ? <Toast message={toastMessage} onClose={() => setToastMessage('')} /> : null}
     </section>
   )
 }
