@@ -6,11 +6,13 @@ import {
   type KeyboardEvent,
   type MouseEvent,
 } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Toast from './Toast'
 import { uploadDocument } from '../lib/api'
 
 function UploadPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate()
   const [isDragging, setIsDragging] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [status, setStatus] = useState('Select or drop a PDF to prepare it for QA.')
@@ -32,6 +34,7 @@ function UploadPanel() {
       const response = await uploadDocument(file)
       setStatus('Upload complete.')
       setToastMessage(response.message || 'Upload finished.')
+      navigate('/chat', { state: { fileName: file.name } })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Upload failed.'
       setStatus(message)

@@ -1,15 +1,14 @@
-import Header from './components/Header'
-import UploadPanel from './components/UploadPanel'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import UploadPage from './pages/UploadPage'
+import ChatPage from './pages/ChatPage'
 
 function App() {
   return (
-    <div className="app-shell">
-      <main className="app-frame">
-        <div className="frame-overlay" />
-        <Header />
-        <UploadPanel />
-      </main>
-    </div>
+    <Routes>
+      <Route path="/" element={<UploadPage />} />
+      <Route path="/chat" element={<ChatPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
 
