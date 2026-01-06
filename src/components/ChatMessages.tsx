@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { normalizeMarkdown } from '../lib/format'
 
@@ -10,12 +11,25 @@ type Message = {
 type ChatMessagesProps = {
   messages: Message[]
   fileName?: string
+  isTyping?: boolean
 }
 
-function ChatMessages({ messages, fileName }: ChatMessagesProps) {
+function ChatMessages({ messages, fileName, isTyping }: ChatMessagesProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+
+    // Scroll after DOM updates so the newest message is visible.
+    requestAnimationFrame(() => {
+      container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+    })
+  }, [messages, isTyping])
+
   return (
     <div className="chat-card">
-      <div className="chat-scroll" aria-live="polite">
+      <div ref={scrollRef} className="chat-scroll" aria-live="polite">
         <div className="message bot">
           <div className="bubble">
             <div className="message-meta">System</div>
@@ -39,6 +53,18 @@ function ChatMessages({ messages, fileName }: ChatMessagesProps) {
             </div>
           </div>
         ))}
+        {isTyping ? (
+          <div className="message bot">
+            <div className="bubble">
+              <div className="message-meta">Assistant</div>
+              <div className="typing-dots" aria-label="Assistant is typing">
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )

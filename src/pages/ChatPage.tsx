@@ -71,7 +71,7 @@ function ChatPage() {
             Upload another file
           </button>
         </div>
-        <ChatMessages messages={messages} fileName={fileName} />
+        <ChatMessages messages={messages} fileName={fileName} isTyping={isSending} />
         <ChatInput value={input} onChange={setInput} onSend={handleSend} disabled={isSending} />
       </div>
     </AppFrame>
