@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# RAG Document QA Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Upload a PDF and chat with a RAG-backed assistant. This Vite + React app provides a two-step flow: document upload and question answering with markdown-rendered responses.
 
-Currently, two official plugins are available:
+## Features
+- PDF upload with drag-and-drop, file validation, and progress states.
+- Chat experience with typing indicator, markdown rendering, and conversation history.
+- Simple routing between upload and chat views.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Getting started
+1. Install dependencies:
 
-## React Compiler
+   ```bash
+   npm install
+   ```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+2. Start the dev server:
 
-## Expanding the ESLint configuration
+   ```bash
+   npm run dev
+   ```
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+3. Build for production:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+   ```bash
+   npm run build
+   ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+4. Preview the production build:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+   ```bash
+   npm run preview
+   ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## API configuration
+The frontend expects a backend running at `http://127.0.0.1:8000` by default. To point to a different host, update `API_HOST` in `src/lib/api.ts`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Expected endpoints
+- `POST /upload` with `multipart/form-data` (`file` field). Returns JSON: `{ "message": "..." }`.
+- `GET /ask?query=...` returns JSON: `{ "data": "..." }`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Tech stack
+- React 19 + TypeScript
+- Vite 7
+- Tailwind CSS (via `@tailwindcss/vite`)
+- React Router
+
+## Project structure
+- `src/pages/UploadPage.tsx`: upload view and header copy.
+- `src/pages/ChatPage.tsx`: chat view, message handling, and routing state.
+- `src/components/`: UI building blocks (upload panel, chat input, messages, header).
+- `src/lib/api.ts`: backend calls and API host configuration.
+- `src/lib/format.ts`: markdown normalization for assistant output.
